@@ -1,0 +1,126 @@
+---
+title: "LinkTools"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{LinkTools}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r libraries}
+library(LinkTools)
+library(polmineR)
+```
+
+# Linktools
+
+The motivation of this set of tools is to link textual data to existing external data sets. The textual data might come in form of XML files, CWB-indexed corpora or Quanteda corpora. 
+
+The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@...] or substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@...]. 
+
+# Linktools as a suit of three functions
+
+This R package facilitates three steps: 
+
+1) Linkage of Data based on metadata via the `LTDataset class` 
+2) Linkage of Data based on continuous Text (Named Entity Linking)
+3) Adding the linked data to the initial textual data
+
+# The LTDataset class
+
+Textual data rarely is just a collection of tokens but in most cases enriched with metadata. Plenary speeches for example contain information about speakers or the date they were delivered. The `LTDataset` class realizes the linking of textual data and external datasets based on this metadata and essentially *joins two rectangular datasets by specific columns*. In addition, it contains some functionality to check if the data is completely linked (i.e. if the join results in missing values).
+
+## Requirements
+
+The `LTDataset` class merges the textual data and the external data by joining them based on different attributes in both datasets.
+
+The textual data we want to add external information to is a collection of speeches by members of parliament in the German Bundestag taken from the GermaParl corpus of parliamentary debates [@BlaetteBlessing2018]. The textual data contains several attributes which can be used for merging. To keep the examples a bit smaller, only speeches of the 13th and 14th legislative period are used.
+
+```{r germaparl_speaker_with_metadata_sample, echo  = FALSE}
+germaparl_lp13_lp14 <- subset("GERMAPARL", lp %in% c(13, 14))
+
+germaparl_speaker_with_metadata <- s_attributes(germaparl_lp13_lp14, c("speaker", "party", "lp", "role"))
+germaparl_speaker_with_metadata_sample <- germaparl_speaker_with_metadata[role == "mp"][sample(.N, 10)]
+data.table::setorder(germaparl_speaker_with_metadata_sample, lp, speaker)
+                     
+DT::datatable(germaparl_speaker_with_metadata_sample, 
+              caption = "10 randomly selected members of parliament from the 
+              GermaParl corpus, 13th and 14th legislative period", 
+              options = list(dom = "t"), 
+              rownames = FALSE)
+```
+
+As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to the these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extendible by users.
+
+To realize this, the class also needs the information about what speaker is associated with which ID. As seen above, we can use a speaker's name, the respective party affiliation, the legislative period and the role as the left sided input of the merge. Preparing the external data in a way these two tables correspond is an upstream task in this sense that it must be prepared beforehand.
+
+In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties).
+
+```{r show_external_data_min_example, echo = FALSE}
+external_data_min_example <- LinkTools::stammdaten_wikidatafied_2022_02_01_min[speaker %in% germaparl_speaker_with_metadata_sample[["speaker"]]]
+data.table::setorder(external_data_min_example, lp, speaker)
+
+DT::datatable(external_data_min_example, 
+              caption = "Speakers in External Data", 
+              options = list(dom = "t", 
+                             pageLength = nrow(external_data_min_example)), 
+              rownames = FALSE)
+```
+
+With these two resources, the task now is to merge the two datasets based on these two tables. 
+
+## Joining Textual Data and Metadata
+
+The `LTDataset` dataset uses the information provided in the textual data and this external resource to perform matching. Aside from the name of or the path to the textual data (the `textual_data`), its type (for now: "cwb" or "xml") and the external resource (a data.table object), it must be indicated which attribute of the external resource should be added. If the name of the column of the external dataset should not be used as the name of the attribute to be added in the textual data, a named vector could be used instead. In addition, it is possible that the textual data and the external resource do not share the same column names. In this case, a named character vector is used to indicate which column of the textual data corresponds to which column of the external dataset. This might make sense to be more transparent about the variables used from the external dataset.
+
+A challenge is that the occurrence of the combination of a speaker's name, the party affiliation and the legislative period needs to be identified before the linkage can be performed for the entire corpus. This can result in rather large tables. Thus, merging can be done in multiple splits instead of merging the entire corpus.
+
+```{r initialize_class}
+LTD <- LTDataset$new(textual_data = germaparl_lp13_lp14, 
+                     textual_data_type = "cwb",
+                     external_resource = LinkTools::stammdaten_wikidatafied_2022_02_01_min, 
+                     attr_to_add = c("wikidata_id_speaker" = "wikidata_id"), 
+                     match_by = c("speaker", "party", "lp", "role"),
+                     split_by = "lp",
+                     verbose = TRUE, 
+                     forced_encoding = "UTF-8")
+```
+
+After initializing the class, we can run the first method which identifies the parts of the textual data which should be linked and actually performs the linkage. Depending on the `textual_data_type`, different tasks are performed. 
+
+```{r join_textual_and_external_data}
+LTD$join_textual_and_external_data()
+```
+
+For CWB corpora the output of this method is a region matrix and a vector of values which can be used to create structural attributes for corpora stored in the Corpus Workbench.
+
+For XML, the return value is a data.table with one individual row per unique combination of attributes which is then used to append the XML files.
+
+To validate the matching, a attribute region data.table can be created.
+
+```{r create_attribute_region_datatable}
+LTD$create_attribute_region_datatable()
+```
+
+```{r print_attributes_by_region_datatable}
+head(LTD$attrs_by_region_dt)
+```
+
+
+This also allows for the manual inspection of missing values as well as the manual addition of missing attributes. If the parameter "match_fuzzily_by" is not NULL, the attribute name provided there there can be used to perform a fuzzy match. All other attributes in "match_by" are still matched literally. The result of this matching is then shown in an interactive shiny session in which they can be accepted and kept or refused and omitted.
+
+```{r check_and_add_missing_values, eval = interactive()}
+LTD$check_and_add_missing_values(check_for_groups = c("role" = "mp"), 
+                                 modify = TRUE, 
+                                 match_fuzzily_by = "speaker",
+                                 doc_dir = "~/lab/gitlab/tmp", 
+                                 verbose = TRUE)
+```
+
+Finally, the values can be added to the corpus by encoding them as a structural attribute. 
+
+~~Adding additional attributes can be realized only temporarily (for experimental reasons or if only a single analysis should be performed instead of changing the corpus forever) or persistently.~~
+
+```{r encode_new_s_attribute, eval = FALSE}
+LTD$encode_new_s_attribute(add_temporarily = TRUE) 
+```

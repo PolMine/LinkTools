@@ -1,0 +1,30 @@
+Package: LinkTools
+Type: Package
+Title: LinkTools
+Version: 0.0.1.9002
+Date: 2023-02-06
+Author: Christoph Leonhardt
+Maintainer: Christoph Leonhardt <someemail@someemailasdasdasdadsadasd.de>
+Description: This package facilitates the linkage of datasets via shared unique identifiers. Four steps are integrated into this package: a) the preparation of datasets which should be linked, i.e. the transformation into a comparable format and the assignment of shared unique identifiers, b) the merge of datasets based on these identifiers, c) the encoding or enrichment of the data with three output formats (data.table, XML or CWB). In addition, d), the package includes a wrapper for the Named Entity Linking of textual data based on DBPedia Spotlight. 
+Imports:
+    data.table,
+    cwbtools,
+    polmineR,
+    R6,
+    magrittr,
+    fuzzyjoin,
+    stringdist, 
+    RcppCWB, 
+    miniUI, 
+    shiny,
+    rhandsontable,
+    stringr
+Suggests:
+    knitr,
+    devtools,
+    DT
+VignetteBuilder: knitr
+LazyData: yes
+License: no distribution without the author's permission
+Encoding: UTF-8
+RoxygenNote: 7.2.0
