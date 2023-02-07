@@ -1,0 +1,19 @@
+---
+output: github_document
+---
+
+<!-- badges: start -->
+[![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
+<!-- badges: end -->
+
+
+# LinkTools
+
+## Dependencies
+
+* running the Vignette requires the availability of the GermaParl CWB corpus
+
+
+## Current Status
+
+* Currently implemented: Record Linkage with CWB corpora
