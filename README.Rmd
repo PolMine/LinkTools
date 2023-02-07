@@ -9,10 +9,23 @@ output: github_document
 
 # LinkTools
 
+## About LinkTools
+
+
 ## Dependencies
 
 * running the Vignette requires the availability of the GermaParl CWB corpus
 
+
+## Installation
+
+```{r install_from_github, eval = FALSE}
+remotes::install_github("PolMine/LinkTools")
+```
+
+```{r install_devversion_from_github, eval = FALSE}
+remotes::install_github("PolMine/LinkTools", ref = "dev")
+```
 
 ## Current Status
 

@@ -6,6 +6,7 @@ used when writing documentation.
 * Renamed this file (NEWS) to NEWS.md for nice rendering on GitHub.
 * Added file .Rbuildignore to the repo to exclude data-dir from being included in pkg tarball.
 * Moved README.md to README.Rmd to that README.md is created from *.Rmd file.
+* Preliminary installation instructions in README.
 
 [2023-02-06] 
 # v0.0.1.9002
