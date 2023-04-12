@@ -10,6 +10,7 @@ vignette: >
 ```{r libraries}
 library(LinkTools)
 library(polmineR)
+library(btstammdaten)
 ```
 
 # Linktools
@@ -37,10 +38,13 @@ The `LTDataset` class merges the textual data and the external data by joining t
 The textual data we want to add external information to is a collection of speeches by members of parliament in the German Bundestag taken from the GermaParl corpus of parliamentary debates [@BlaetteBlessing2018]. The textual data contains several attributes which can be used for merging. To keep the examples a bit smaller, only speeches of the 13th and 14th legislative period are used.
 
 ```{r germaparl_speaker_with_metadata_sample, echo  = FALSE}
-germaparl_lp13_lp14 <- subset("GERMAPARL", lp %in% c(13, 14))
+germaparl_lp13_lp14 <- corpus("GERMAPARL") |>
+  subset(lp %in% c(13, 14)) |>
+  subset(role == "mp")
 
 germaparl_speaker_with_metadata <- s_attributes(germaparl_lp13_lp14, c("speaker", "party", "lp", "role"))
 germaparl_speaker_with_metadata_sample <- germaparl_speaker_with_metadata[role == "mp"][sample(.N, 10)]
+
 data.table::setorder(germaparl_speaker_with_metadata_sample, lp, speaker)
                      
 DT::datatable(germaparl_speaker_with_metadata_sample, 
@@ -50,15 +54,20 @@ DT::datatable(germaparl_speaker_with_metadata_sample,
               rownames = FALSE)
 ```
 
-As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to the these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extendible by users.
+As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to the these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extensible by users.
 
 To realize this, the class also needs the information about what speaker is associated with which ID. As seen above, we can use a speaker's name, the respective party affiliation, the legislative period and the role as the left sided input of the merge. Preparing the external data in a way these two tables correspond is an upstream task in this sense that it must be prepared beforehand.
 
-In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties).
+In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties). This data has been prepared earlier and is provided as an R data package `btstammdaten` [@btstammdaten_package]
 
 ```{r show_external_data_min_example, echo = FALSE}
-external_data_min_example <- LinkTools::stammdaten_wikidatafied_2022_02_01_min[speaker %in% germaparl_speaker_with_metadata_sample[["speaker"]]]
-data.table::setorder(external_data_min_example, lp, speaker)
+
+external_data_min_example <- btstammdaten::bt_stammdaten_enriched |>
+  as.data.table() |>
+  subset(legislative_period %in% c(13, 14)) |>
+  subset(full_name %in% germaparl_speaker_with_metadata_sample[["speaker"]])
+
+data.table::setorder(external_data_min_example, legislative_period, full_name)
 
 DT::datatable(external_data_min_example, 
               caption = "Speakers in External Data", 
@@ -78,9 +87,11 @@ A challenge is that the occurrence of the combination of a speaker's name, the p
 ```{r initialize_class}
 LTD <- LTDataset$new(textual_data = germaparl_lp13_lp14, 
                      textual_data_type = "cwb",
-                     external_resource = LinkTools::stammdaten_wikidatafied_2022_02_01_min, 
+                     external_resource = btstammdaten::bt_stammdaten_enriched,
                      attr_to_add = c("wikidata_id_speaker" = "wikidata_id"), 
-                     match_by = c("speaker", "party", "lp", "role"),
+                     match_by = c("speaker" = "full_name",
+                                  "party" = "party_wikipedia",
+                                  "lp" = "legislative_period"),
                      split_by = "lp",
                      verbose = TRUE, 
                      forced_encoding = "UTF-8")
@@ -110,7 +121,7 @@ head(LTD$attrs_by_region_dt)
 This also allows for the manual inspection of missing values as well as the manual addition of missing attributes. If the parameter "match_fuzzily_by" is not NULL, the attribute name provided there there can be used to perform a fuzzy match. All other attributes in "match_by" are still matched literally. The result of this matching is then shown in an interactive shiny session in which they can be accepted and kept or refused and omitted.
 
 ```{r check_and_add_missing_values, eval = interactive()}
-LTD$check_and_add_missing_values(check_for_groups = c("role" = "mp"), 
+LTD$check_and_add_missing_values(check_for_groups = NULL,
                                  modify = TRUE, 
                                  match_fuzzily_by = "speaker",
                                  doc_dir = "~/lab/gitlab/tmp", 

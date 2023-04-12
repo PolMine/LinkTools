@@ -594,12 +594,12 @@ LTDataset <- R6Class(
       
       if (nrow(attrs_by_region_dt_min) > 0) {
         
-        if (modify) {
+        if (isTRUE(modify)) {
           
           # if there are missing values and modify is TRUE, then we might add values
           # manually.
           
-          add_manually <- menu(title = "After inspecting the results, do you want to add values for the missing attributes manually?\n\nThese additions are added to the value vector used for encoding.\n\nThese manual additions are documented in a log file.\n\nAlternatively, modify ID resource and redo?", 
+          add_manually <- menu(title = "After inspecting the results, do you want to add values for the missing attributes manually?\n\nThese additions are added to the value vector used for encoding.\n\nThese manual additions are documented in a log file.\n\nAlternatively, modify ID resource and redo.",
                                choices = c("Yes", "No"))
           
           if (!exists("add_manually") || add_manually == 2) {
@@ -608,47 +608,55 @@ LTDataset <- R6Class(
             
             if (is.null(doc_dir)) stop("No existing directory provided.")
             
-            
             if (!is.null(match_fuzzily_by)) {
               
               # if it is allowed to match fuzzily, the attribute stated in the
               # attribute is matched via fuzzy matching while all other
               # variables are used for literate matching.
               
-              attrs_by_region_dt_min <- self$fuzzy_join_missing_values(attrs_by_region_dt_min, match_fuzzily_by)
+              attrs_by_region_dt_min_mod <- self$fuzzy_join_missing_values(attrs_by_region_dt_min,
+                                                                           match_fuzzily_by)
+
+              # make shiny / rhandsontable with log: LTD$attribute_name_in_corpus
+              # added manually in the following instances: ... (simply by subsetting
+              # changed rows?)
+
+              attrs_by_region_dt_min_mod <- self$add_missing_attributes_via_shiny(y = attrs_by_region_dt_min_mod,
+                                                                                  doc_dir = doc_dir)
+
+            } else {
+              
+              attrs_by_region_dt_min_mod <- self$add_missing_attributes_via_shiny(y = attrs_by_region_dt_min,
+                                                                                  doc_dir = doc_dir)
               
             }
             
-            # make shiny / rhandsontable with log: LTD$attribute_name_in_corpus
-            # added manually in the following instances: ... (simply by subsetting
-            # changed rows?)
-            
-            attrs_by_region_dt_min <- self$add_missing_attributes_via_shiny(y = attrs_by_region_dt_min, doc_dir = doc_dir)
+
             
             # first check if any of the values should not be kept
-            keep_not_idx <- which(attrs_by_region_dt_min[["keep"]] == FALSE)
-            if (length(keep_not_idx) > 0) attrs_by_region_dt_min <- attrs_by_region_dt_min[-keep_not_idx, ]
+            keep_not_idx <- which(attrs_by_region_dt_min_mod[["keep"]] == FALSE)
+            if (length(keep_not_idx) > 0) attrs_by_region_dt_min_mod <- attrs_by_region_dt_min_mod[-keep_not_idx, ]
             
             # then we need to check if each speaker only occurs once with the
             # actual attribute columns.
             cols_to_keep_after_shiny <- c(names(self$match_by), self$attribute_name_in_corpus)
             
-            if (nrow(unique(attrs_by_region_dt_min[, ..cols_to_keep_after_shiny])) != nrow(attrs_by_region_dt_min)) {
+            if (nrow(unique(attrs_by_region_dt_min_mod[, ..cols_to_keep_after_shiny])) != nrow(attrs_by_region_dt_min)) {
               stop("... there seems to be a problem as there are more rows than unique attribute combinations, meaning that a single value has been added more than once.")
               
               # IDEALLY THIS WOULD TRIGGER THE SHINY APPLICATION AGAIN
             } else {
-              attrs_by_region_dt_min <- attrs_by_region_dt_min[, ..cols_to_keep_after_shiny]
+              attrs_by_region_dt_min_mod <- attrs_by_region_dt_min_mod[, ..cols_to_keep_after_shiny]
             }
             
-            attrs_by_region_dt_min_added <- attrs_by_region_dt_min[!is.na(get(self$attribute_name_in_corpus)), ]
-            self$missing_after_check <- attrs_by_region_dt_min[is.na(get(self$attribute_name_in_corpus)), ]
+            attrs_by_region_dt_min_added <- attrs_by_region_dt_min_mod[!is.na(get(self$attribute_name_in_corpus)), ]
+            self$missing_after_check <- attrs_by_region_dt_min_mod[is.na(get(self$attribute_name_in_corpus)), ]
             
             # indicate that this is added
             attrs_by_region_dt_min_added[, added := TRUE]
             
             # we have to change the values in self$values here
-            join_cols <- setdiff(names(attrs_by_region_dt_min), self$attribute_name_in_corpus)
+            join_cols <- setdiff(names(attrs_by_region_dt_min_mod), self$attribute_name_in_corpus)
             
             self$attrs_by_region_dt[attrs_by_region_dt_min_added, 
                                c((self$attribute_name_in_corpus), "added") := .(get(paste0("i.", (self$attribute_name_in_corpus))), i.added), 
@@ -803,18 +811,19 @@ LTDataset <- R6Class(
         ret
       }
       
-      fuzzy_in_textual_data <- as.character(self$match_by[which(names(self$match_by) == match_fuzzily_by)])
-      fuzzy_in_external_data <- names(self$match_by)[which(names(self$match_by) == match_fuzzily_by)]
+      # column names in external data are renamed in the class slot.
       
-      non_fuzzy_in_textual_data <- as.character(self$match_by[which(names(self$match_by) != match_fuzzily_by)])
-      non_fuzzy_in_external_data <- names(self$match_by)[which(names(self$match_by) != match_fuzzily_by)]
+      fuzzy_var_name <- names(self$match_by)[which(names(self$match_by) == match_fuzzily_by)]
+      non_fuzzy_var_name <- names(self$match_by)[which(names(self$match_by) != match_fuzzily_by)]
       
-      by_x_vector <- c(fuzzy_in_textual_data, non_fuzzy_in_textual_data)
-      by_y_vector <- c(fuzzy_in_external_data, non_fuzzy_in_external_data)
+      # by_x_vector <- c(fuzzy_in_textual_data, non_fuzzy_in_textual_data)
+      # by_y_vector <- c(fuzzy_in_external_data, non_fuzzy_in_external_data)
       
+      by_vector <- c(fuzzy_var_name, non_fuzzy_var_name)
+      target_var <- colnames(self$external_resource)[which(!colnames(self$external_resource) %in% by_vector)]
       
       # this might be not very robust.
-      match_fun_list <- vector("list", length(c(fuzzy_in_textual_data, non_fuzzy_in_textual_data)))
+      match_fun_list <- vector("list", length(c(fuzzy_var_name, non_fuzzy_var_name)))
       
       for (i in 1:length(fuzzy_in_textual_data)) {
         match_fun_list[[i]] <- match_fun_stringdist
@@ -826,22 +835,24 @@ LTDataset <- R6Class(
       
       attrs_by_region_dt_min_joined <- fuzzyjoin::fuzzy_join(
         x = attrs_by_region_dt_min, 
-        y = self$external_resource, 
-        by = list(x = by_x_vector, 
-                  y = by_y_vector
-        ), 
-        
+        y = self$external_resource,
+        by = by_vector,
+
         match_fun = match_fun_list,
         mode = "left"
       )
       
       # clean up. Remove all ".y" columns except for the fuzzily joined
       # attribute and all dist column.
+
       attrs_by_region_dt_min_joined <- data.table::as.data.table(attrs_by_region_dt_min_joined)
-      columns_to_omit <- c(paste0(non_fuzzy_in_textual_data, ".y"), 
-                           paste0(c(fuzzy_in_textual_data, non_fuzzy_in_textual_data), ".dist")
+
+      columns_to_omit <- c(paste0(by_vector, ".y"),
+                           paste0(by_vector, ".dist")
                            )
       
+      fuzzy_var_name_joined <- paste0(fuzzy_var_name, ".y")
+      columns_to_omit <- columns_to_omit[columns_to_omit != fuzzy_var_name_joined]
       attrs_by_region_dt_min_joined[, (columns_to_omit) := NULL]
       
       # then use the joined new attribute to add to the missing values
@@ -851,21 +862,27 @@ LTDataset <- R6Class(
       
       # we remove the column with the old, missing values
       attrs_by_region_dt_min_joined[, (attribute_name_in_corpus_in_x) := NULL]
-      
+
       # and rename it accordingly
-      data.table::setnames(attrs_by_region_dt_min_joined, old = attribute_name_in_corpus_in_y, new = self$attribute_name_in_corpus)
-      
+      data.table::setnames(attrs_by_region_dt_min_joined,
+                           old = attribute_name_in_corpus_in_y,
+                           new = self$attribute_name_in_corpus)
+
       # and do this for all the other textual data columns (".x") as well.
       data.table::setnames(attrs_by_region_dt_min_joined, 
                            old = paste0(names(self$match_by), ".x"), 
                            new = names(self$match_by))
-      
-      # finally, we rename the added fuzzily matched match variable to make
+
+      # finally, we rename the fuzzily matched match variable to make
       # transparent
-      data.table::setnames(attrs_by_region_dt_min_joined, old = paste0(fuzzy_in_external_data, ".y"), new = paste0(fuzzy_in_external_data, "_fuzzy_matched"))
-      data.table::setcolorder(attrs_by_region_dt_min_joined, c(names(self$match_by), 
-                                                               self$attribute_name_in_corpus, 
-                                                               paste0(fuzzy_in_external_data, "_fuzzy_matched")))
+
+      data.table::setnames(attrs_by_region_dt_min_joined,
+                           old = fuzzy_var_name_joined,
+                           new = paste0(fuzzy_var_name, "_fuzzy_matched"))
+
+      data.table::setcolorder(attrs_by_region_dt_min_joined, c(names(self$match_by),
+                                                               paste0(fuzzy_var_name, "_fuzzy_matched"),
+                                                               target_var))
       
       return(attrs_by_region_dt_min_joined)
       
