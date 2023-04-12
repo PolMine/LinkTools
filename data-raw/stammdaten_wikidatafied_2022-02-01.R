@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 library(data.table)
 
-stammdaten_file <- read.csv("~/lab/gitlab/bt_stammdaten/stammdaten_wikidatafied_2022-02-01.csv")
+stammdaten_file <- read.csv("~/lab/gitlab/bt_stammdaten/stammdaten_wikidatafied_2022-02-0")
 
 stammdaten_wikidatafied_2022_02_01_min <- stammdaten_file |>
   filter(lp %in% c(13, 14)) |>

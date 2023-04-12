@@ -22,7 +22,7 @@ The external datasets might comprise of biographical data such as in the "Stammd
 
 This R package facilitates three steps: 
 
-1) Linkage of Data based on metadata via the `LTDataset class` 
+1) Linkage of Data based on metadata via the `LTDataset` class
 2) Linkage of Data based on continuous Text (Named Entity Linking)
 3) Adding the linked data to the initial textual data
 
@@ -119,7 +119,7 @@ LTD$check_and_add_missing_values(check_for_groups = c("role" = "mp"),
 
 Finally, the values can be added to the corpus by encoding them as a structural attribute. 
 
-~~Adding additional attributes can be realized only temporarily (for experimental reasons or if only a single analysis should be performed instead of changing the corpus forever) or persistently.~~
+~~Adding additional attributes can be realized only temporarily (for experimental reasons or if only a single analysis should be performed instead of changing the corpus forever) or persistently.
 
 ```{r encode_new_s_attribute, eval = FALSE}
 LTD$encode_new_s_attribute(add_temporarily = TRUE) 
