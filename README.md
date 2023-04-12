@@ -1,6 +1,11 @@
 
 <!-- badges: start -->
 
+[![License: GPL
+v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![R build
+status](https://github.com/PolMine/LinkTools/workflows/R-CMD-check/badge.svg)](https://github.com/PolMine/LinkTools/actions)
+[![codecov](https://codecov.io/gh/PolMine/LinkTools/branch/main/graph/badge.svg)](https://codecov.io/gh/PolMine/LinkTools/branch/main)
 [![Lifecycle:
 maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
 <!-- badges: end -->
