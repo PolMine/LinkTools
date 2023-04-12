@@ -25,48 +25,48 @@ data with three output formats (data.table, XML or CWB).
 
 \section{Arguments}{
  \describe{
-   \item{`textual_data`}{a character vector of the corpus the IDs should be added to.},
-   \item{`textual_data_type`}{a character vector indicating the type of 
-   textual data (cwb or xml)}
-   \item{`external_resource`}{a data.frame of an external dataset the IDs are coming
-  from.}
-  \item{`attr_to_add`}{a character vector indicating the ID that should be
-  added. If named, the name indicates the desired name of the ID as an
-  structural attribute in the corpus data. The value of the character vector
-  indicates the column of the external dataset the ID is stored in.}
-  \item{`split_by`}{a character vector indicating a s-attribute the corpus data
-  should be split by to reduce memory usage.}
-  \item{`match_by`}{a character vector indicating the metadata used to
-  match the corpus data and the external dataset. If named, the names of the
-  character vector indicate the names of the s-attributes in the corpus data
-  and the values indicate the corresponding column names in the external
-  dataset.}
-  \item{`forced_encoding`}{The desired output encoding of the textual data.
-  This might be useful when the original encoding and the locale differ.}
-  \item{`verbose`}{boolean, whether or not to print messages. Defaults to FALSE.}
-  }
+\item{\code{textual_data}}{a character vector of the corpus the IDs should be added to.},
+\item{\code{textual_data_type}}{a character vector indicating the type of
+textual data (cwb or xml)}
+\item{\code{external_resource}}{a data.frame of an external dataset the IDs are coming
+from.}
+\item{\code{attr_to_add}}{a character vector indicating the ID that should be
+added. If named, the name indicates the desired name of the ID as an
+structural attribute in the corpus data. The value of the character vector
+indicates the column of the external dataset the ID is stored in.}
+\item{\code{split_by}}{a character vector indicating a s-attribute the corpus data
+should be split by to reduce memory usage.}
+\item{\code{match_by}}{a character vector indicating the metadata used to
+match the corpus data and the external dataset. If named, the names of the
+character vector indicate the names of the s-attributes in the corpus data
+and the values indicate the corresponding column names in the external
+dataset.}
+\item{\code{forced_encoding}}{The desired output encoding of the textual data.
+This might be useful when the original encoding and the locale differ.}
+\item{\code{verbose}}{boolean, whether or not to print messages. Defaults to FALSE.}
+}
 }
 
 \section{Methods}{
  \describe{
-   \item{`initialize()`}{initialize a new object of class `LTDataset`}
-  \item{`join_textual_and_external_data()`}{perform the actual merge of the data},
-  \item{`external_attribute_to_region_matrix()`}{transform the matched data to
-  a matrix for encoding.}
-  \item{`check_and_add_missing_values()`}{check the completeness of the merging
-  operation and add missing values interactively.}
-  \item{`add_missing_attributes_via_shiny()`}{called by `check_and_add_missing_values()`
-  to add missing values interactively.}
-  \item{`create_attribute_region_datatable()`}{returns a data.table of matched
-  attributes. Can be used for further manual checks.}
-  \item{`encode_new_s_attribute(add_temporarily)`}{encodes the new attribute
-  as a structural attribute (for CWB)}
+\item{\code{initialize()}}{initialize a new object of class \code{LTDataset}}
+\item{\code{join_textual_and_external_data()}}{perform the actual merge of the data},
+\item{\code{external_attribute_to_region_matrix()}}{transform the matched data to
+a matrix for encoding.}
+\item{\code{check_and_add_missing_values()}}{check the completeness of the merging
+operation and add missing values interactively.}
+\item{\code{add_missing_attributes_via_shiny()}}{called by \code{check_and_add_missing_values()}
+to add missing values interactively.}
+\item{\code{create_attribute_region_datatable()}}{returns a data.table of matched
+attributes. Can be used for further manual checks.}
+\item{\code{encode_new_s_attribute(add_temporarily)}}{encodes the new attribute
+as a structural attribute (for CWB)}
 }
 }
 
 \references{
 See the second answer here:
-  https://stackoverflow.com/questions/48008903/combined-fuzzy-and-exact-matching
+https://stackoverflow.com/questions/48008903/combined-fuzzy-and-exact-matching
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -202,7 +202,7 @@ This might be useful when the original encoding and the locale differ.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new `LTDataset` object.
+A new \code{LTDataset} object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -255,13 +255,13 @@ encodes the new attribute as a structural attribute (for CWB).
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{add_temporarily}}{whether to add the structural attribute temporarily 
+\item{\code{add_temporarily}}{whether to add the structural attribute temporarily
 or permanently.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new `LTDataset` object.
+A new \code{LTDataset} object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -287,7 +287,7 @@ further manual checks.
 \if{latex}{\out{\hypertarget{method-LTDataset-check_and_add_missing_values}{}}}
 \subsection{Method \code{check_and_add_missing_values()}}{
 check the completeness of the merging operation and add
-  missing values interactively.
+missing values interactively.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LTDataset$check_and_add_missing_values(
   check_for_groups = NULL,
@@ -324,7 +324,7 @@ messages.}
 \if{html}{\out{<a id="method-LTDataset-add_missing_attributes_via_shiny"></a>}}
 \if{latex}{\out{\hypertarget{method-LTDataset-add_missing_attributes_via_shiny}{}}}
 \subsection{Method \code{add_missing_attributes_via_shiny()}}{
-Add missing values with shiny and rhandsontable. Called by `check_and_add_missing_values()`.
+Add missing values with shiny and rhandsontable. Called by \code{check_and_add_missing_values()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LTDataset$add_missing_attributes_via_shiny(y, doc_dir)}\if{html}{\out{</div>}}
 }
@@ -345,7 +345,7 @@ a text file is created which documents manual changes to the merge.}
 \if{latex}{\out{\hypertarget{method-LTDataset-fuzzy_join_missing_values}{}}}
 \subsection{Method \code{fuzzy_join_missing_values()}}{
 Add missing values using a fuzzy join. Called by
-  `check_and_add_missing_values()`.
+\code{check_and_add_missing_values()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LTDataset$fuzzy_join_missing_values(attrs_by_region_dt_min, match_fuzzily_by)}\if{html}{\out{</div>}}
 }

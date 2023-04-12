@@ -7,6 +7,7 @@ used when writing documentation.
 * Added file .Rbuildignore to the repo to exclude data-dir from being included in pkg tarball.
 * Moved README.md to README.Rmd to that README.md is created from *.Rmd file.
 * Preliminary installation instructions in README.
+* Added tags @docType and @keywords to documentation objects.
 
 [2023-02-06] 
 # v0.0.1.9002

@@ -19,8 +19,8 @@ stammdaten_wikidatafied_2022_02_01_min
 }
 \description{
 A minimized version of the Stammdaten of the German Bundestag of the 13th and
-14th legislative period with added WikiData IDs retrieved via the Wikidata Query 
-Service and added party affiliations specific for the legislative period retrieved 
+14th legislative period with added WikiData IDs retrieved via the Wikidata Query
+Service and added party affiliations specific for the legislative period retrieved
 from Wikipedia. For preparation see bt_stammdaten.
 }
 \keyword{datasets}
