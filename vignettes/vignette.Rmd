@@ -10,13 +10,20 @@ vignette: >
 ```{r libraries}
 library(LinkTools)
 library(polmineR)
+library(btmp)
 ```
+
+```{r}
+use("polmineR")
+set.seed(343)
+```
+
 
 # Linktools
 
-The motivation of this set of tools is to link textual data to existing external data sets. The textual data might come in form of XML files, CWB-indexed corpora or Quanteda corpora. 
+The motivation of this set of tools is to link textual data to existing external data sets. The textual data might come in form of XML files, CWB-indexed corpora or quanteda corpora. 
 
-The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@...] or substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@...]. 
+The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@...], substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@...] or other structured information of knowledge bases such as Wikidata or DBpedia.
 
 # Linktools as a suit of three functions
 
@@ -28,37 +35,50 @@ This R package facilitates three steps:
 
 # The LTDataset class
 
-Textual data rarely is just a collection of tokens but in most cases enriched with metadata. Plenary speeches for example contain information about speakers or the date they were delivered. The `LTDataset` class realizes the linking of textual data and external datasets based on this metadata and essentially *joins two rectangular datasets by specific columns*. In addition, it contains some functionality to check if the data is completely linked (i.e. if the join results in missing values).
+Textual data rarely is just a collection of tokens but in most cases enriched with metadata. Plenary speeches for example contain information about speakers or the date they were delivered. The `LTDataset` class realizes the linking of textual data and external datasets based on this metadata and essentially *joins two rectangular datasets by specific columns*. In addition, it contains some functionality to check if the data is completely linked (i.e. if the join results in missing values) and provides possibilities to add missing information both fuzzily and manually.
 
 ## Requirements
 
-The `LTDataset` class merges the textual data and the external data by joining them based on different attributes in both datasets.
+The `LTDataset` class merges the textual data and the external data by joining them based on different attributes in both datasets. As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extensible by users.
 
-The textual data we want to add external information to is a collection of speeches by members of parliament in the German Bundestag taken from the GermaParl corpus of parliamentary debates [@BlaetteBlessing2018]. The textual data contains several attributes which can be used for merging. To keep the examples a bit smaller, only speeches of the 13th and 14th legislative period are used.
+To realize this, the `LTDataset` class also needs the information about which speaker is associated with which ID. We can use a speaker's name, the respective party affiliation and the legislative period as the left sided input of the merge.
+
+### Textual Data
+
+In this vignette, the textual data we want to add external information to is a collection of speeches by members of parliament in the German Bundestag. We use a part of the GermaParl corpus of parliamentary debates [@BlaetteBlessing2018] which is provided as sample data in the `polmineR` R package. This sample corpus, GermaParlMini, contains several attributes which can be used for merging.
+
+While in the example below, the entire corpus is enriched, with the external data, it is also possible to only enrich a part of the corpus (i.e. subcorpora).
 
 ```{r germaparl_speaker_with_metadata_sample, echo  = FALSE}
-germaparl_lp13_lp14 <- subset("GERMAPARL", lp %in% c(13, 14))
-
-germaparl_speaker_with_metadata <- s_attributes(germaparl_lp13_lp14, c("speaker", "party", "lp", "role"))
-germaparl_speaker_with_metadata_sample <- germaparl_speaker_with_metadata[role == "mp"][sample(.N, 10)]
-data.table::setorder(germaparl_speaker_with_metadata_sample, lp, speaker)
+speakers_germaparlmini <- corpus("GERMAPARLMINI") |>
+  s_attributes(c("speaker", "protocol_lp", "party"))
+speakers_germaparlmini <- speakers_germaparlmini[, !c("struc", "cpos_left", "cpos_right")] |>
+  unique()
+data.table::setnames(speakers_germaparlmini, old = "value", new = "speaker")
+speakers_germaparlmini_sample <- speakers_germaparlmini[party != "NA"][sample(.N, 10)]
+data.table::setorder(speakers_germaparlmini_sample, protocol_lp, speaker)
                      
-DT::datatable(germaparl_speaker_with_metadata_sample, 
-              caption = "10 randomly selected members of parliament from the 
-              GermaParl corpus, 13th and 14th legislative period", 
+DT::datatable(speakers_germaparlmini_sample, 
+              caption = "10 randomly selected members of parliament from the GermaParlMini corpus", 
               options = list(dom = "t"), 
               rownames = FALSE)
 ```
 
-As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to the these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extendible by users.
+### External Data
 
-To realize this, the class also needs the information about what speaker is associated with which ID. As seen above, we can use a speaker's name, the respective party affiliation, the legislative period and the role as the left sided input of the merge. Preparing the external data in a way these two tables correspond is an upstream task in this sense that it must be prepared beforehand.
+The external data is a set of observations which contains information that can be used for matching the data to the metadata in the text corpus as well as additional data that should be added to the corpus. 
 
-In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties).
+In other words, some overlap between the dataset must exist to perform the matching. Often, the overlap exists naturally between different data sources - such as names or party affiliations for members of parliament - but there certainly are instances in which external datasets must be prepared beforehand to facilitate the matching. 
+
+In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties). This data has been prepared earlier and is provided as an R data package `btmp` [@btmp_package]. The preparation of the data is discussed in the corresponding R data package.
+
+The following table shows the external dataset concerning those speakers which have been sampled randomly above.
 
 ```{r show_external_data_min_example, echo = FALSE}
-external_data_min_example <- LinkTools::stammdaten_wikidatafied_2022_02_01_min[speaker %in% germaparl_speaker_with_metadata_sample[["speaker"]]]
-data.table::setorder(external_data_min_example, lp, speaker)
+external_data_min_example <- btmp::btmp_de |>
+  subset(legislative_period == 17) |>
+  subset(full_name %in% speakers_germaparlmini_sample[["speaker"]]) |>
+  data.table::setorder(legislative_period, full_name)
 
 DT::datatable(external_data_min_example, 
               caption = "Speakers in External Data", 
@@ -67,24 +87,36 @@ DT::datatable(external_data_min_example,
               rownames = FALSE)
 ```
 
-With these two resources, the task now is to merge the two datasets based on these two tables. 
+*Note:* This example also illustrates that matching by identical names only is quite challenging. Not all ten speakers could be retrieved by name only because the names in the Stammdaten file (provided by the `btmp` package) and the names in the textual data of GermaParlMini are not identical and thus not all speakers can be matched by their names. The vignette shows how to perform fuzzy matching to address these problems.
 
 ## Joining Textual Data and Metadata
 
-The `LTDataset` dataset uses the information provided in the textual data and this external resource to perform matching. Aside from the name of or the path to the textual data (the `textual_data`), its type (for now: "cwb" or "xml") and the external resource (a data.table object), it must be indicated which attribute of the external resource should be added. If the name of the column of the external dataset should not be used as the name of the attribute to be added in the textual data, a named vector could be used instead. In addition, it is possible that the textual data and the external resource do not share the same column names. In this case, a named character vector is used to indicate which column of the textual data corresponds to which column of the external dataset. This might make sense to be more transparent about the variables used from the external dataset.
+With these two resources, the task now is to merge the two datasets based on these two tables.
 
-A challenge is that the occurrence of the combination of a speaker's name, the party affiliation and the legislative period needs to be identified before the linkage can be performed for the entire corpus. This can result in rather large tables. Thus, merging can be done in multiple splits instead of merging the entire corpus.
+### Instantiate the Class
+
+The `LTDataset` dataset uses the information provided in the textual data and this external resource to perform matching. Aside from the name of or the path to the textual data (the `textual_data`), its type (for now: "cwb") and the external resource (a data.table object), it must be indicated which attribute of the external resource should be added.
+
+If the name of the added attribute in the final data should be different than the column name of the external data, a named character vector can be used instead. The name of the vector then represents the final name of the attribute in the enriched textual data.
+
+In addition, it is possible that the name of the attributes used for matching is different between the textual data and the external data containing the additional information. In this case, a named character vector is used to indicate which column of the textual data corresponds to which column of the external dataset.
+
+Since identifying all regions of text described by the combination of metadata used to match the data can result in quite large data structured, merging can be done in multiple splits, reducing the memory demand. Given the rather small size of the GERMAPARLMINI corpus, this is not done here.
 
 ```{r initialize_class}
-LTD <- LTDataset$new(textual_data = germaparl_lp13_lp14, 
+LTD <- LTDataset$new(textual_data = "GERMAPARLMINI", 
                      textual_data_type = "cwb",
-                     external_resource = LinkTools::stammdaten_wikidatafied_2022_02_01_min, 
-                     attr_to_add = c("wikidata_id_speaker" = "wikidata_id"), 
-                     match_by = c("speaker", "party", "lp", "role"),
-                     split_by = "lp",
+                     external_resource = btmp::btmp_de,
+                     attr_to_add = c("id" = "wikidata_id"), 
+                     match_by = c("speaker" = "full_name",
+                                  "party" = "party_wikipedia",
+                                  "protocol_lp" = "legislative_period"),
+                     split_by = NULL,
                      verbose = TRUE, 
                      forced_encoding = "UTF-8")
 ```
+
+### Instantiate the Class
 
 After initializing the class, we can run the first method which identifies the parts of the textual data which should be linked and actually performs the linkage. Depending on the `textual_data_type`, different tasks are performed. 
 
@@ -92,35 +124,50 @@ After initializing the class, we can run the first method which identifies the p
 LTD$join_textual_and_external_data()
 ```
 
-For CWB corpora the output of this method is a region matrix and a vector of values which can be used to create structural attributes for corpora stored in the Corpus Workbench.
+For CWB corpora the output of this method is a region matrix and a vector of values which can be used to create structural attributes for corpora stored in the CWB format.
 
-For XML, the return value is a data.table with one individual row per unique combination of attributes which is then used to append the XML files.
+For XML, the return value should be a data.table with one individual row per unique combination of attributes which is then used to append the XML files.
 
-To validate the matching, a attribute region data.table can be created.
+To validate the matching, an attribute region data.table can be created using the `create_attribute_region_datatable()` function. The function also allows to define additional attributes which were not used for the earlier verbatim matching but might be useful for both the fuzzy matching and the manual inspection. For example, specific periods of time or groups of persons which might not be part of the external data and thus cannot be matched in any case could be excluded like that. We omit this step here.
 
 ```{r create_attribute_region_datatable}
 LTD$create_attribute_region_datatable()
 ```
 
+Looking at the example data we see that not all speakers could be matched based on the speaker's name, her or his party affiliation and the legislative period. This is often due to speakers not having a party affiliation because they are not members of parliament. In GermaParlMini, the party metadata contains information about parliamentary groups which only concern members of parliament and not other types of speakers such as presidential speakers or governmental actors. These are not part of the dataset we want to link with and thus the linking fails in these instances.
+
+Looking at other speakers who have not been matched reveals that it is mostly the name of the party affiliation in the textual data which is slightly different.
+ 
 ```{r print_attributes_by_region_datatable}
 head(LTD$attrs_by_region_dt)
 ```
 
+To provide a systematic way to inspect missing values manually and to add missing attributes, the function `check_and_add_missing_values()` is provided. Knowing that speakers without a party affiliation cannot be matched in any case, these observations can be excluded from the manual inspection.
 
-This also allows for the manual inspection of missing values as well as the manual addition of missing attributes. If the parameter "match_fuzzily_by" is not NULL, the attribute name provided there there can be used to perform a fuzzy match. All other attributes in "match_by" are still matched literally. The result of this matching is then shown in an interactive shiny session in which they can be accepted and kept or refused and omitted.
+```{r}
+LTD$attrs_by_region_dt[party != "NA"][is.na(id)]
+```
+
+If the parameter "match_fuzzily_by" is not NULL, the attribute name provided there there can be used to perform a fuzzy match. All other attributes in "match_by" are matched literally. The result of this matching is then shown in an interactive shiny session in which they can be accepted and kept, modified or refused and omitted.
+
+The fuzzy match is facilitated by the `fuzzy_join()` function of the package of the same name [@fuzzyjoin2020]. The main driver in the following match is a part of the `stringdist_join()` function to which the arguments `ignore_case`, `dist_method` and `max_dist` can be passed. The following chunk shows the chosen default values (a levenstein distance of a maximum of 4 with casing being ignored).
+
+To document the changes made manually, a log file is created in the directory defined by the `doc_dir` argument.
 
 ```{r check_and_add_missing_values, eval = interactive()}
-LTD$check_and_add_missing_values(check_for_groups = c("role" = "mp"), 
+LTD$check_and_add_missing_values(check_for_groups = list("party" = "NA"),
+                                 negate = TRUE,
                                  modify = TRUE, 
-                                 match_fuzzily_by = "speaker",
-                                 doc_dir = "~/lab/gitlab/tmp", 
+                                 match_fuzzily_by = c("speaker", "party"),
+                                 doc_dir = "~/lab/gitlab/tmp",
+                                 ignore_case = TRUE,
+                                 dist_method = "lv",
+                                 max_dist = 4L,
                                  verbose = TRUE)
 ```
 
 Finally, the values can be added to the corpus by encoding them as a structural attribute. 
 
-~~Adding additional attributes can be realized only temporarily (for experimental reasons or if only a single analysis should be performed instead of changing the corpus forever) or persistently.
-
 ```{r encode_new_s_attribute, eval = FALSE}
-LTD$encode_new_s_attribute(add_temporarily = TRUE) 
+LTD$encode_new_s_attribute()
 ```

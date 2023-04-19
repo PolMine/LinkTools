@@ -21,6 +21,6 @@ c) the encoding or enrichment of the data with three output formats
 (data.table, XML or CWB).
 
 d) the package includes a wrapper for the Named Entity Linking of textual
-data based on DBPedia Spotlight.
+data based on DBpedia Spotlight.
 }
 \keyword{package}
