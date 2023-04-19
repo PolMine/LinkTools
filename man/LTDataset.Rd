@@ -18,6 +18,13 @@ of datasets which should be linked, i.e. the transformation into a comparable
 format and the assignment of shared unique identifiers, b) the merge of
 datasets based on these identifiers, c) the encoding or enrichment of the
 data with three output formats (data.table, XML or CWB).
+
+`additional_attributes` might be useful when information of a
+  dataset is added which only covers a part of the corpus such as as
+  specific period of time or specific groups of speakers.
+
+The defaults were changed. "lv" is now the default method,
+  max_dist is 4 and ignore_case is now TRUE.
 }
 \section{Usage}{
  LTDataset <- LTDataset$new()
@@ -59,14 +66,37 @@ data with three output formats (data.table, XML or CWB).
   to add missing values interactively.}
   \item{`create_attribute_region_datatable()`}{returns a data.table of matched
   attributes. Can be used for further manual checks.}
-  \item{`encode_new_s_attribute(add_temporarily)`}{encodes the new attribute
+  \item{`encode_new_s_attribute()`}{encodes the new attribute
   as a structural attribute (for CWB)}
 }
 }
 
 \references{
-See the second answer here:
+When formulating the data.table join functions in
+`join_textual_and_external_data()`, the following Stack Overflow links
+were useful:
+https://stackoverflow.com/questions/45043600/merging-all-column-by-reference-in-a-data-table
+and https://stackoverflow.com/questions/44433451/r-data-table-update-join
+
+For fuzzy matching `fuzzyjoin` is a crucial dependency:
+
+David Robinson (2020). fuzzyjoin: Join Tables Together on
+  Inexact Matching. R package version 0.1.6.
+  https://CRAN.R-project.org/package=fuzzyjoin
+
+Using `stringdist_join` in combination with `fuzzy_join` in
+  `fuzzy_join_missing_values()` was inspired by the second answer here:
   https://stackoverflow.com/questions/48008903/combined-fuzzy-and-exact-matching
+
+Using `formals` to reset the default values of
+  `stringdist_join` in `fuzzy_join_missing_values()` was inspired by the
+  second answer here:
+  https://stackoverflow.com/questions/27673415/store-function-arguments-inside-the-function-and-apply-them-for-future-use-in-r
+
+Large parts of `add_missing_attributes_via_shiny()` are taken
+  from the implementation of rhandsontable and shinyWidgets in: Blaette,
+  Andreas (2023). polmineR: Verbs and Nouns for Corpus Analysis. R
+  package version v0.8.8.
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -146,6 +176,8 @@ missing after the manual check}
 \item \href{#method-LTDataset-check_and_add_missing_values}{\code{LTDataset$check_and_add_missing_values()}}
 \item \href{#method-LTDataset-add_missing_attributes_via_shiny}{\code{LTDataset$add_missing_attributes_via_shiny()}}
 \item \href{#method-LTDataset-fuzzy_join_missing_values}{\code{LTDataset$fuzzy_join_missing_values()}}
+\item \href{#method-LTDataset-stringdist_join_match_fun}{\code{LTDataset$stringdist_join_match_fun()}}
+\item \href{#method-LTDataset-add_missing_regions}{\code{LTDataset$add_missing_regions()}}
 \item \href{#method-LTDataset-clone}{\code{LTDataset$clone()}}
 }
 }
@@ -249,17 +281,9 @@ transform the matched data to a matrix for encoding.
 \subsection{Method \code{encode_new_s_attribute()}}{
 encodes the new attribute as a structural attribute (for CWB).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LTDataset$encode_new_s_attribute(add_temporarily)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$encode_new_s_attribute()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{add_temporarily}}{whether to add the structural attribute temporarily 
-or permanently.}
-}
-\if{html}{\out{</div>}}
-}
 \subsection{Returns}{
 A new `LTDataset` object.
 }
@@ -269,15 +293,22 @@ A new `LTDataset` object.
 \if{latex}{\out{\hypertarget{method-LTDataset-create_attribute_region_datatable}{}}}
 \subsection{Method \code{create_attribute_region_datatable()}}{
 returns a data.table of matched attributes. Can be used for
-further manual checks.
+  further manual checks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LTDataset$create_attribute_region_datatable(verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$create_attribute_region_datatable(
+  verbose = FALSE,
+  additional_attributes = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{verbose}}{\code{logical}}
+
+\item{\code{additional_attributes}}{`a character vector` of additional
+structural attributes which should be considered when evaluating the
+results of the linkage.}
 }
 \if{html}{\out{</div>}}
 }
@@ -291,9 +322,13 @@ check the completeness of the merging operation and add
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LTDataset$check_and_add_missing_values(
   check_for_groups = NULL,
+  negate = FALSE,
   modify = FALSE,
   match_fuzzily_by = NULL,
   doc_dir = NULL,
+  ignore_case = TRUE,
+  dist_method = "lv",
+  max_dist = 4L,
   verbose = TRUE
 )}\if{html}{\out{</div>}}
 }
@@ -301,20 +336,35 @@ check the completeness of the merging operation and add
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{check_for_groups}}{a \code{character vector}; in case not all
-elements are expected to have been matched, filter which elements
-should be checked.}
+\item{\code{check_for_groups}}{a named `list`; in case not all elements are
+expected to have been matched, select which elements should be checked.}
 
-\item{\code{modify}}{\code{logical}; whether missing values should not only be
+\item{\code{negate}}{`logical`; whether the selection in `check_for_groups`
+should be negated, i.e. if these elements should be filtered instead of
+selected.}
+
+\item{\code{modify}}{`logical`; whether missing values should not only be
 inspected but also modified interactively.}
 
-\item{\code{match_fuzzily_by}}{a \code{character vector}; if not NULL, a fuzzy
+\item{\code{match_fuzzily_by}}{a `character vector`; if not NULL, a fuzzy
 match will be performed on the column indicated.}
 
-\item{\code{doc_dir}}{a \code{character vector}; Indicating a directory in which
+\item{\code{doc_dir}}{a `character vector`; Indicating a directory in which
 a text file is created which documents manual changes to the merge.}
 
-\item{\code{verbose}}{\code{logical}; whether to print more comprehensive
+\item{\code{ignore_case}}{`logical` whether to match the case. This is a
+argument of `stringdist_join` which is used in
+`fuzzy_join_missing_values`}
+
+\item{\code{dist_method}}{A `character` The measurement of distance used by
+`stringdist_join`. See `stringdist-metrics` in the `stringdist` package
+which is used in `fuzzy_join_missing_values`.}
+
+\item{\code{max_dist}}{An `integer` value indicating the maximum distance
+between the two input vectors. This is a argument of `stringdist_join`
+which is used in `fuzzy_join_missing_values`.}
+
+\item{\code{verbose}}{`logical`; whether to print more comprehensive
 messages.}
 }
 \if{html}{\out{</div>}}
@@ -324,7 +374,8 @@ messages.}
 \if{html}{\out{<a id="method-LTDataset-add_missing_attributes_via_shiny"></a>}}
 \if{latex}{\out{\hypertarget{method-LTDataset-add_missing_attributes_via_shiny}{}}}
 \subsection{Method \code{add_missing_attributes_via_shiny()}}{
-Add missing values with shiny and rhandsontable. Called by `check_and_add_missing_values()`.
+Add missing values with shiny and rhandsontable. Called by
+  `check_and_add_missing_values()`.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LTDataset$add_missing_attributes_via_shiny(y, doc_dir)}\if{html}{\out{</div>}}
 }
@@ -347,20 +398,86 @@ a text file is created which documents manual changes to the merge.}
 Add missing values using a fuzzy join. Called by
   `check_and_add_missing_values()`.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LTDataset$fuzzy_join_missing_values(attrs_by_region_dt_min, match_fuzzily_by)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$fuzzy_join_missing_values(
+  attrs_by_region_dt_min,
+  match_fuzzily_by,
+  ignore_case = TRUE,
+  dist_method = "lv",
+  max_dist = 4L
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{attrs_by_region_dt_min}}{a \code{data.table} containing incomplete
-rows after the merge.}
+\item{\code{attrs_by_region_dt_min}}{a `data.table` containing incomplete rows
+after the merge.}
 
-\item{\code{match_fuzzily_by}}{a \code{character vector}; if not NULL, a fuzzy
-match will be performed on the column indicated.}
+\item{\code{match_fuzzily_by}}{a `character vector`; if not NULL, a fuzzy match
+will be performed on the column indicated.}
+
+\item{\code{ignore_case}}{`logical` whether to match the case. This is a
+argument of `stringdist_join`.}
+
+\item{\code{dist_method}}{A `character` The measurement of distance used by
+`stringdist_join`. See `stringdist-metrics` in the `stringdist`
+package.}
+
+\item{\code{max_dist}}{An `integer` value indicating the maximum distance
+between the two input vectors. This is a argument of `stringdist_join`.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LTDataset-stringdist_join_match_fun"></a>}}
+\if{latex}{\out{\hypertarget{method-LTDataset-stringdist_join_match_fun}{}}}
+\subsection{Method \code{stringdist_join_match_fun()}}{
+The function used for those attributes which are matched
+  fuzzily. Called by `fuzzy_join_missing_values()`. This function is
+  identical to the "match_fun" of `stringdist_join()` of the `fuzzyjoin`
+  package with changed defaults.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$stringdist_join_match_fun(
+  v1,
+  v2,
+  max_dist = 4L,
+  method = c("lv", "osa", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw",
+    "soundex"),
+  ignore_case = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{v1, v2}}{`character vectors` to be compared fuzzily.}
+
+\item{\code{max_dist}}{An `integer` value indicating the maximum distance
+between the two input vectors. This is a argument of `stringdist_join`.}
+
+\item{\code{method}}{A `character` The measurement of distance used by
+`stringdist_join`. See `stringdist-metrics` in the `stringdist`
+package.}
+
+\item{\code{ignore_case}}{`logical` whether to match the case. This is a
+argument of `stringdist_join`.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LTDataset-add_missing_regions"></a>}}
+\if{latex}{\out{\hypertarget{method-LTDataset-add_missing_regions}{}}}
+\subsection{Method \code{add_missing_regions()}}{
+The function checks if the entire corpus is covered by the
+  region matrix. If not, the missing regions of the corpus are added to
+  the region matrix and the value vector. This is needed to encode the
+  new data.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$add_missing_regions()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-LTDataset-clone"></a>}}
