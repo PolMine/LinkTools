@@ -25,7 +25,7 @@ The motivation of this set of tools is to link textual data to existing external
 
 The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@...], substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@...] or other structured information of knowledge bases such as Wikidata or DBpedia.
 
-# Linktools as a suit of three functions
+# Linktools as a suite of three functions
 
 This R package facilitates three steps: 
 

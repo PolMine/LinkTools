@@ -1,3 +1,9 @@
+V0.0.1.9005
+* replaced `\code{}` tags in the documentation
+* reduced verbosity of intermediate steps
+* introduced a check if the external dataset contains NA values in significant columns before fuzzy matching
+* introduced messages from the `cli` package
+
 [2023-04-19]
 * addressed a quite comprehensive issue in `external_attribute_to_region_matrix()` that potentially obscured speakers which were not matched, making them unavailable for both the fuzzy matching and manual inspection (issue #14)
 * introduced tests

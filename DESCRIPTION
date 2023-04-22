@@ -1,14 +1,15 @@
 Package: LinkTools
 Type: Package
 Title: LinkTools
-Version: 0.0.1.9004
-Date: 2023-04-19
+Version: 0.0.1.9005
+Date: 2023-04-22
 Author: Christoph Leonhardt
-Maintainer: Christoph Leonhardt <someemail@someemailasdasdasdadsadasd.de>
-Description: This package facilitates the linkage of datasets via shared unique identifiers. Four steps are integrated into this package: a) the preparation of datasets which should be linked, i.e. the transformation into a comparable format and the assignment of shared unique identifiers, b) the merge of datasets based on these identifiers, c) the encoding or enrichment of the data with three output formats (data.table, XML or CWB). In addition, d), the package includes a wrapper for the Named Entity Linking of textual data based on DBPedia Spotlight. 
+Maintainer: Christoph Leonhardt <christoph.leonhardt@uni-due.de>
+Description: This package facilitates the linkage of datasets. Once finished, four steps should be integrated into this package: a) the preparation of datasets which should be linked, i.e. the transformation into a comparable format and the assignment of new information, in particular shared unique identifiers, b) the merge of datasets based on these identifiers, c) the encoding or enrichment of the data with different output formats (data.table, XML or CWB). In addition, d), the package includes a wrapper for the Named Entity Linking of textual data based on DBpedia Spotlight.
 Depends:
   R (>= 3.5.0)
 Imports:
+    cli,
     data.table,
     cwbtools,
     polmineR,

@@ -101,31 +101,31 @@ package version v0.8.8.
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{textual_data}}{a \code{character vector} of the corpus the IDs
+\item{\code{textual_data}}{a \verb{character vector} of the corpus the IDs
 should be added to.}
 
-\item{\code{textual_data_type}}{a \code{character vector} indicating the type of
+\item{\code{textual_data_type}}{a \verb{character vector} indicating the type of
 textual data (cwb or xml).}
 
-\item{\code{external_resource}}{a \code{data.frame or data.table} of an external
+\item{\code{external_resource}}{a \code{data.frame} or \code{data.table} of an external
 dataset the IDs are coming from.}
 
-\item{\code{attr_to_add}}{a \code{character vector} indicating the ID that
+\item{\code{attr_to_add}}{a \verb{character vector} indicating the ID that
 should be added. If named, the name indicates the desired name of the
 ID as an structural attribute in the corpus data. The value of the
 character vector indicates the column of the external dataset the ID is
 stored in.}
 
-\item{\code{split_by}}{a \code{character vector} indicating a s-attribute the
+\item{\code{split_by}}{a \verb{character vector} indicating a s-attribute the
 corpus data should be split by to reduce memory usage.}
 
-\item{\code{match_by}}{a \code{character vector} indicating the metadata used to
+\item{\code{match_by}}{a \verb{character vector} indicating the metadata used to
 match the corpus data and the external dataset. If named, the names of
 the character vector indicate the names of the s-attributes in the
 corpus data and the values indicate the corresponding column names in
 the external dataset.}
 
-\item{\code{forced_encoding}}{a \code{character vector} of the desired output
+\item{\code{forced_encoding}}{a \verb{character vector} of the desired output
 encoding of the textual data. This might be useful when the original
 encoding and the locale differ.}
 
@@ -144,10 +144,10 @@ attribute to add in the external resource.}
 \item{\code{text_dt}}{a \code{data.table} in case of a cwb corpus, this
 contains the decoded corpus.}
 
-\item{\code{encoding_method}}{a \code{character vector} of the encoding method
+\item{\code{encoding_method}}{a \verb{character vector} of the encoding method
 used to create the corpus (R or CWB).}
 
-\item{\code{values}}{a \code{character vector} of values to encode after the
+\item{\code{values}}{a \verb{character vector} of values to encode after the
 merge.}
 
 \item{\code{region_matrix}}{a \code{matrix} of corpus positions corresponding to
@@ -259,7 +259,7 @@ perform the actual merge of the data.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{na_value}}{a \code{character vector} indicating which value
+\item{\code{na_value}}{a \verb{character vector} indicating which value
 attributes should have that aren't merged.}
 }
 \if{html}{\out{</div>}}
@@ -295,17 +295,12 @@ A new \code{LTDataset} object.
 returns a data.table of matched attributes. Can be used for
 further manual checks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LTDataset$create_attribute_region_datatable(
-  verbose = FALSE,
-  additional_attributes = NULL
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LTDataset$create_attribute_region_datatable(additional_attributes = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{verbose}}{\code{logical}}
-
 \item{\code{additional_attributes}}{\verb{a character vector} of additional
 structural attributes which should be considered when evaluating the
 results of the linkage.}
@@ -385,7 +380,7 @@ Add missing values with shiny and rhandsontable. Called by
 \describe{
 \item{\code{y}}{a \code{data.table} containing incomplete rows after the merge.}
 
-\item{\code{doc_dir}}{a \code{character vector}; Indicating a directory in which
+\item{\code{doc_dir}}{a \verb{character vector}; Indicating a directory in which
 a text file is created which documents manual changes to the merge.}
 }
 \if{html}{\out{</div>}}
