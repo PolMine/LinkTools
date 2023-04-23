@@ -5,6 +5,7 @@ vignette: >
   %\VignetteIndexEntry{LinkTools}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+bibliography: vignette.bib
 ---
 
 ```{r libraries}
@@ -23,7 +24,7 @@ set.seed(343)
 
 The motivation of this set of tools is to link textual data to existing external data sets. The textual data might come in form of XML files, CWB-indexed corpora or quanteda corpora. 
 
-The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@...], substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@...] or other structured information of knowledge bases such as Wikidata or DBpedia.
+The external datasets might comprise of biographical data such as in the "Stammdaten des Deutschen Bundestages" [@stammdaten], substantial findings in their own right, such as the "BT Vote MP Characteristics" dataset [@btvote_mp_characteristics] or other structured information of knowledge bases such as Wikidata or DBpedia.
 
 # Linktools as a suite of three functions
 
@@ -39,7 +40,7 @@ Textual data rarely is just a collection of tokens but in most cases enriched wi
 
 ## Requirements
 
-The `LTDataset` class merges the textual data and the external data by joining them based on different attributes in both datasets. As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to these speakers. As pointed out in previous considerations [@WORKINGPAPER], these are generally available for a vast amount of entities, stable and extensible by users.
+The `LTDataset` class merges the textual data and the external data by joining them based on different attributes in both datasets. As argued previously, a robust way to link external datasets and textual data is the use of shared unique identifiers. Following this intuition, we want to add Wikidata-IDs to these speakers. As discussed in previous considerations (Note: in an unpublished working paper), these are generally available for a vast amount of entities, stable and extensible by users.
 
 To realize this, the `LTDataset` class also needs the information about which speaker is associated with which ID. We can use a speaker's name, the respective party affiliation and the legislative period as the left sided input of the merge.
 
@@ -70,7 +71,7 @@ The external data is a set of observations which contains information that can b
 
 In other words, some overlap between the dataset must exist to perform the matching. Often, the overlap exists naturally between different data sources - such as names or party affiliations for members of parliament - but there certainly are instances in which external datasets must be prepared beforehand to facilitate the matching. 
 
-In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties). This data has been prepared earlier and is provided as an R data package `btmp` [@btmp_package]. The preparation of the data is discussed in the corresponding R data package.
+In the following, we use data gathered from the `Stammdaten des Deutschen Bundestages` which were enriched with both Wikidata-IDs and the speakers' party affiliation specific for the individual legislative period as per Wikipedia (the Stammdaten themselves only contain static party affiliation which is the most recent party affiliation of a speaker, regardless of politicians switching parties). This data has been prepared earlier and is provided as an R data package `btmp` (to be made available publicly). The preparation of the data is discussed in the corresponding R data package.
 
 The following table shows the external dataset concerning those speakers which have been sampled randomly above.
 
@@ -150,7 +151,7 @@ LTD$attrs_by_region_dt[party != "NA"][is.na(id)]
 
 If the parameter "match_fuzzily_by" is not NULL, the attribute name provided there there can be used to perform a fuzzy match. All other attributes in "match_by" are matched literally. The result of this matching is then shown in an interactive shiny session in which they can be accepted and kept, modified or refused and omitted.
 
-The fuzzy match is facilitated by the `fuzzy_join()` function of the package of the same name [@fuzzyjoin2020]. The main driver in the following match is a part of the `stringdist_join()` function to which the arguments `ignore_case`, `dist_method` and `max_dist` can be passed. The following chunk shows the chosen default values (a levenstein distance of a maximum of 4 with casing being ignored).
+The fuzzy match is facilitated by the `fuzzy_join()` function of the package of the same name [@fuzzyjoin2020]. The main driver in the following match is a part of the `stringdist_join()` function to which the arguments `ignore_case`, `dist_method` and `max_dist` can be passed. The following chunk shows the chosen default values (a Levenshtein distance of a maximum of 4 with casing being ignored).
 
 To document the changes made manually, a log file is created in the directory defined by the `doc_dir` argument.
 
